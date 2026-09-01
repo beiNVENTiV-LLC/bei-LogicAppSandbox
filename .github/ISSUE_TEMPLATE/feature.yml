@@ -1,0 +1,108 @@
+name: Feature request
+description: Propose a new capability or enhancement for bei-LogicAppSandbox.
+title: "feat: <short imperative summary>"
+labels:
+  - enhancement
+  - triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for proposing a change to **bei-LogicAppSandbox**.
+
+        Do not paste secrets, tokens, connection strings, keys, production payloads or real
+        customer data into this issue. See `SECURITY.md`.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: What is missing or painful today? Describe the need, not the solution.
+      placeholder: Today the workflow accepts an order with no line items, so...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed capability
+      description: What should exist after this work is done?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area affected
+      multiple: true
+      options:
+        - Logic App workflow (src/logic-app/)
+        - Infrastructure (infra/)
+        - CI/CD (.github/workflows/)
+        - Repository governance
+        - Operations (ops/)
+        - Tests (tests/)
+        - Documentation (docs/)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Target module
+      options:
+        - MODULE 2 - repository and governance
+        - MODULE 3 - infrastructure
+        - MODULE 4 - deployment and promotion
+        - Later module
+        - Not module-specific
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Specific, testable statements. One per line.
+      placeholder: |
+        - An order missing customer email is rejected with HTTP 400
+        - The rejection is recorded in Application Insights
+    validations:
+      required: true
+
+  - type: textarea
+    id: environments
+    attributes:
+      label: Environment impact
+      description: What changes in UAT? What changes in PROD? Any configuration or parameter change?
+    validations:
+      required: true
+
+  - type: textarea
+    id: security
+    attributes:
+      label: Security considerations
+      description: >
+        New identity, role assignment, endpoint, secret NAME (never a value), or external
+        dependency. Write "None" if there is none.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Expected semantic version impact
+      description: MAJOR, MINOR or PATCH, and why.
+      placeholder: MINOR - backward-compatible capability
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: This issue contains no secret, credential, token, connection string or production payload.
+          required: true
+        - label: I have checked that an equivalent issue does not already exist.
+          required: true

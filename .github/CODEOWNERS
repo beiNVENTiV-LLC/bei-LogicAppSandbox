@@ -1,0 +1,37 @@
+# ---------------------------------------------------------------------------
+# bei-LogicAppSandbox code owners
+#
+# ACTION REQUIRED BEFORE THIS FILE WORKS
+# Replace every occurrence of @ORG-SLUG-PLACEHOLDER/azure-integration-maintainers
+# with the ACTUAL visible GitHub team slug, in the form @<org-slug>/<team-slug>.
+# The organization slug and the team slug have NOT been confirmed and must not
+# be guessed. The team must also be granted write access to this repository, or
+# GitHub will silently ignore these rules and no code-owner review will be
+# requested.
+#
+# Verify with:
+#   gh api /orgs/<org-slug>/teams --jq '.[].slug'
+#   gh api /repos/<org-slug>/bei-LogicAppSandbox/teams --jq '.[].slug'
+#
+# Later rules win in CODEOWNERS, so the catch-all is first and the most
+# sensitive paths are last.
+# ---------------------------------------------------------------------------
+
+# Catch-all: every file in the repository
+*                       @ORG-SLUG-PLACEHOLDER/azure-integration-maintainers
+
+# Operational controls
+/ops/                   @ORG-SLUG-PLACEHOLDER/azure-integration-maintainers
+
+# Logic App source
+/src/logic-app/         @ORG-SLUG-PLACEHOLDER/azure-integration-maintainers
+
+# Infrastructure as code
+/infra/                 @ORG-SLUG-PLACEHOLDER/azure-integration-maintainers
+
+# Repository configuration and automation
+/.github/               @ORG-SLUG-PLACEHOLDER/azure-integration-maintainers
+/.github/workflows/     @ORG-SLUG-PLACEHOLDER/azure-integration-maintainers
+
+# Code ownership itself - listed last so it cannot be overridden by an earlier rule
+/.github/CODEOWNERS     @ORG-SLUG-PLACEHOLDER/azure-integration-maintainers

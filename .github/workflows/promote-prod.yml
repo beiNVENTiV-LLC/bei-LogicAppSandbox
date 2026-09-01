@@ -1,0 +1,70 @@
+# ---------------------------------------------------------------------------
+# bei-LogicAppSandbox - promote to PROD
+#
+# STATUS: PLACEHOLDER. MODULE 4 IS NOT IMPLEMENTED.
+#
+# This workflow deliberately fails if it is invoked. It exists so that the
+# deployment surface is visible and reviewable, not so that it can run.
+#
+# It contains, by design:
+#   - no Azure login and no OIDC token request
+#   - no deployment step
+#   - no artifact upload, download or publication
+#   - no Azure credential, subscription id, tenant id, client id, resource
+#     group name or resource name
+#
+# It is manual-only (workflow_dispatch); no push, pull_request, schedule or
+# release event can start it.
+#
+# Implementing this workflow is MODULE 4 work and is currently
+# BLOCKED - AZURE IDENTITY REQUIRED. See:
+#   docs/decisions/0001-oidc-deployment-identity-blocked.md
+# ---------------------------------------------------------------------------
+name: promote-prod
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  not-implemented:
+    name: not-implemented
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Explain why this workflow cannot run
+        run: |
+          {
+            echo "### promote-prod - NOT IMPLEMENTED"
+            echo ""
+            echo "MODULE 4 configuration is required before this workflow can run."
+            echo ""
+            echo "**Intended future purpose**"
+            echo ""
+            echo "- Take the exact artifact already validated in UAT - never rebuild for PROD"
+            echo "- Wait for the PROD GitHub Environment reviewer gate"
+            echo "- Authenticate to Azure with OIDC / workload identity federation using the separate PROD deployment identity"
+            echo "- Deploy infra/main.bicep with infra/environments/main.prod.bicepparam"
+            echo "- Deploy the promoted artifact to the PROD Logic App Standard resource"
+            echo "- Run the PROD smoke test and record deployment history"
+            echo ""
+            echo "**Blocked on**"
+            echo ""
+            echo "- A PROD Azure deployment identity and federated credential, separate from UAT, scoped to this repository and the PROD environment"
+            echo "- AZURE_CLIENT_ID, AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID on the PROD GitHub Environment"
+            echo "- A PROD reviewer gate with self-approval prevented"
+            echo "- A successful UAT deployment to promote from"
+            echo ""
+            echo "See docs/decisions/0001-oidc-deployment-identity-blocked.md."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail deliberately
+        run: |
+          echo "::error::promote-prod is a MODULE 2 placeholder. MODULE 4 configuration is required before this workflow can run. Nothing was deployed."
+          exit 1

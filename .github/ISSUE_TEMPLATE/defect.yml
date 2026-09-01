@@ -1,0 +1,109 @@
+name: Defect report
+description: Report incorrect behaviour in bei-LogicAppSandbox.
+title: "fix: <short imperative summary>"
+labels:
+  - defect
+  - triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a defect in **bei-LogicAppSandbox**.
+
+        Do not paste secrets, tokens, connection strings, keys, run URLs containing a signature,
+        production payloads or real customer data into this issue. Redact payloads before
+        attaching them. See `SECURITY.md`.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is wrong, in one or two sentences?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Where was this observed?
+      options:
+        - Local development
+        - UAT
+        - PROD
+        - CI (GitHub Actions)
+        - Repository / tooling
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - S1 - production outage or data loss
+        - S2 - major function broken, no workaround
+        - S3 - function broken, workaround exists
+        - S4 - minor or cosmetic
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps. Include the workflow name and the trigger used.
+      placeholder: |
+        1. POST a redacted order payload to the ingest endpoint
+        2. Observe the run history for wf-shopify-order-ingest
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: Include the failing action name and error code. Redact any value that could be a secret.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      description: Contents of VERSION, the release tag, or the commit SHA.
+      placeholder: v0.1.0 / a1b2c3d
+    validations:
+      required: true
+
+  - type: input
+    id: correlation
+    attributes:
+      label: Run identifier or correlation id
+      description: Logic App run id or Application Insights operation id. Never a callback URL containing a signature.
+    validations:
+      required: false
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Business impact
+      description: Who or what is affected, and how urgently does this need to be fixed?
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: This issue contains no secret, credential, token, connection string or unredacted production payload.
+          required: true
+        - label: If this was an emergency change made outside the pull-request process, I will open the reconciliation pull request within one business day.
+          required: false

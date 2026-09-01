@@ -1,0 +1,23 @@
+# Dependency and action-version updates for bei-LogicAppSandbox.
+# Dependabot branches are named dependabot/*, which is an approved branch pattern.
+# Dependabot pull requests follow the same protected-main rules as any other change:
+# they require pr-validation, code-owner review and an independent approval.
+version: 2
+
+updates:
+  # GitHub Actions used by workflows in .github/workflows/.
+  # Actions are pinned to full commit SHAs; Dependabot updates the SHA and the
+  # accompanying version comment together.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "America/Denver"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
+    labels:
+      - "dependencies"
+      - "github-actions"

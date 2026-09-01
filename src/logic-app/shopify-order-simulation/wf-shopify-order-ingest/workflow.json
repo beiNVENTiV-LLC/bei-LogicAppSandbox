@@ -1,0 +1,56 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {},
+    "triggers": {
+      "When_a_HTTP_request_is_received": {
+        "type": "Request",
+        "kind": "Http",
+        "inputs": {
+          "method": "POST",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "order_number": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "actions": {
+      "Compose_placeholder_acknowledgement": {
+        "type": "Compose",
+        "runAfter": {},
+        "inputs": {
+          "module": "MODULE 2 - repository blueprint",
+          "status": "placeholder",
+          "message": "This workflow is a MODULE 2 placeholder. It performs no validation, transformation, storage, notification or telemetry, and it calls no external service."
+        }
+      },
+      "Response": {
+        "type": "Response",
+        "kind": "Http",
+        "runAfter": {
+          "Compose_placeholder_acknowledgement": [
+            "Succeeded"
+          ]
+        },
+        "inputs": {
+          "statusCode": 200,
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": "@outputs('Compose_placeholder_acknowledgement')"
+        }
+      }
+    },
+    "outputs": {}
+  },
+  "kind": "Stateful"
+}

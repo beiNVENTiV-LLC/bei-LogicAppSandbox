@@ -1,0 +1,319 @@
+# ---------------------------------------------------------------------------
+# bei-LogicAppSandbox - pull request validation
+#
+# This is the ONLY active workflow in the repository. It deploys nothing, logs
+# in to nothing, and publishes nothing.
+#
+# It publishes a single stable status check named:  pr-validation
+# That exact name is the required status check on the protected main branch.
+# Renaming this job or this workflow will silently break branch protection.
+# ---------------------------------------------------------------------------
+name: pr-validation
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Least privilege: the job only needs to read the repository contents.
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  pr-validation:
+    name: pr-validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        # actions/checkout v4.2.2 - pinned to a full commit SHA.
+        # Update only through a reviewed Dependabot pull request.
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify required folders and files
+        run: |
+          set -euo pipefail
+          fail=0
+
+          required_dirs=(
+            ".github/workflows"
+            ".github/ISSUE_TEMPLATE"
+            "src/logic-app/shopify-order-simulation"
+            "src/logic-app/shopify-order-simulation/wf-shopify-order-ingest"
+            "infra"
+            "infra/modules"
+            "infra/environments"
+            "tests/payloads/valid"
+            "tests/payloads/invalid"
+            "tests/payloads/edge-cases"
+            "tests/contracts"
+            "tests/integration"
+            "tests/smoke"
+            "scripts"
+            "docs/architecture"
+            "docs/decisions"
+            "docs/onboarding"
+            "docs/runbooks"
+            "ops/alerts"
+            "ops/dashboards"
+            "ops/queries"
+            "ops/support"
+          )
+
+          required_files=(
+            ".editorconfig"
+            ".gitignore"
+            "CHANGELOG.md"
+            "CONTRIBUTING.md"
+            "README.md"
+            "SECURITY.md"
+            "VERSION"
+            ".github/CODEOWNERS"
+            ".github/dependabot.yml"
+            ".github/PULL_REQUEST_TEMPLATE.md"
+            ".github/ISSUE_TEMPLATE/feature.yml"
+            ".github/ISSUE_TEMPLATE/defect.yml"
+            ".github/workflows/pr-validation.yml"
+            ".github/workflows/deploy-uat.yml"
+            ".github/workflows/promote-prod.yml"
+            ".github/workflows/release.yml"
+            "src/logic-app/shopify-order-simulation/host.json"
+            "src/logic-app/shopify-order-simulation/connections.json"
+            "src/logic-app/shopify-order-simulation/parameters.json"
+            "src/logic-app/shopify-order-simulation/local.settings.example.json"
+            "src/logic-app/shopify-order-simulation/.funcignore"
+            "src/logic-app/shopify-order-simulation/wf-shopify-order-ingest/workflow.json"
+            "infra/main.bicep"
+            "infra/bicepconfig.json"
+            "infra/environments/main.uat.bicepparam"
+            "infra/environments/main.prod.bicepparam"
+          )
+
+          for d in "${required_dirs[@]}"; do
+            if [ ! -d "$d" ]; then echo "::error::Missing required directory: $d"; fail=1; fi
+          done
+          for f in "${required_files[@]}"; do
+            if [ ! -f "$f" ]; then echo "::error::Missing required file: $f"; fail=1; fi
+          done
+
+          if [ "$(cat VERSION | tr -d '[:space:]')" = "" ]; then
+            echo "::error::VERSION is empty"; fail=1
+          fi
+          if ! grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' <(tr -d '[:space:]' < VERSION); then
+            echo "::error::VERSION must contain a semantic version such as 0.1.0"; fail=1
+          fi
+
+          [ "$fail" -eq 0 ] && echo "Required tree is present."
+          exit "$fail"
+
+      - name: Validate JSON syntax
+        run: |
+          set -euo pipefail
+          fail=0
+          while IFS= read -r -d '' file; do
+            if ! python3 -c "import json,sys; json.load(open(sys.argv[1], encoding='utf-8-sig'))" "$file"; then
+              echo "::error file=$file::Invalid JSON"
+              fail=1
+            fi
+          done < <(find . -path ./.git -prune -o -type f -name '*.json' -print0)
+          [ "$fail" -eq 0 ] && echo "All JSON files parsed."
+          exit "$fail"
+
+      - name: Validate YAML syntax
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet --disable-pip-version-check pyyaml
+          fail=0
+          while IFS= read -r -d '' file; do
+            if ! python3 -c "import yaml,sys; list(yaml.safe_load_all(open(sys.argv[1], encoding='utf-8')))" "$file"; then
+              echo "::error file=$file::Invalid YAML"
+              fail=1
+            fi
+          done < <(find . -path ./.git -prune -o -type f \( -name '*.yml' -o -name '*.yaml' \) -print0)
+          [ "$fail" -eq 0 ] && echo "All YAML files parsed."
+          exit "$fail"
+
+      - name: Validate Logic App Standard project boundary
+        run: |
+          set -euo pipefail
+          root="src/logic-app/shopify-order-simulation"
+          fail=0
+
+          # Every workflow folder at the project root must contain workflow.json.
+          shopt -s nullglob
+          found=0
+          for dir in "$root"/wf-*/; do
+            found=1
+            if [ ! -f "${dir}workflow.json" ]; then
+              echo "::error::Workflow folder ${dir} does not contain workflow.json"; fail=1
+            fi
+            case "$dir" in
+              *uat*|*prod*|*dev*|*test*)
+                echo "::error::Workflow folder ${dir} contains an environment name. The same artifact is promoted between environments."
+                fail=1
+                ;;
+            esac
+          done
+          [ "$found" -eq 0 ] && { echo "::error::No wf-* workflow folder found under $root"; fail=1; }
+
+          # The placeholder workflow must not reference an external system.
+          if grep -REiq 'shopify\.com|blob\.core\.windows\.net|vault\.azure\.net|smtp|office365|outlook\.office' "$root"; then
+            echo "::error::The placeholder workflow references an external endpoint. It must call nothing."
+            fail=1
+          fi
+
+          [ "$fail" -eq 0 ] && echo "Logic App project boundary is valid."
+          exit "$fail"
+
+      - name: Build and lint Bicep
+        run: |
+          set -euo pipefail
+          az bicep install
+          az bicep version
+          az bicep build --file infra/main.bicep --outdir "$RUNNER_TEMP/bicep-build"
+          fail=0
+          for f in infra/modules/*.bicep; do
+            [ -e "$f" ] || continue
+            az bicep build --file "$f" --outdir "$RUNNER_TEMP/bicep-build" || fail=1
+          done
+          for f in infra/environments/*.bicepparam; do
+            [ -e "$f" ] || continue
+            az bicep build-params --file "$f" --outfile "$RUNNER_TEMP/bicep-build/$(basename "$f").json" || fail=1
+          done
+          [ "$fail" -eq 0 ] && echo "Bicep build and lint succeeded."
+          exit "$fail"
+
+      - name: Check prohibited files are not tracked
+        run: |
+          set -euo pipefail
+          fail=0
+          patterns=(
+            'local.settings.json'
+            '*.pfx'
+            '*.pem'
+            '*.key'
+            '*.p12'
+            '*.publishsettings'
+            '*.PublishSettings'
+            '*.azurePubxml'
+            '.env'
+            '*.zip'
+          )
+          for p in "${patterns[@]}"; do
+            matches="$(git ls-files -- "$p" "**/$p" || true)"
+            if [ -n "$matches" ]; then
+              echo "::error::Prohibited file tracked in git (pattern $p):"
+              echo "$matches"
+              fail=1
+            fi
+          done
+
+          if [ ! -f src/logic-app/shopify-order-simulation/local.settings.example.json ]; then
+            echo "::error::local.settings.example.json is missing"; fail=1
+          fi
+
+          # .gitignore must still protect the local settings file.
+          if ! grep -q 'local.settings.json' .gitignore; then
+            echo "::error::.gitignore no longer excludes local.settings.json"; fail=1
+          fi
+          touch src/logic-app/shopify-order-simulation/local.settings.json
+          if ! git check-ignore -q src/logic-app/shopify-order-simulation/local.settings.json; then
+            echo "::error::local.settings.json is NOT ignored by .gitignore"; fail=1
+          fi
+          rm -f src/logic-app/shopify-order-simulation/local.settings.json
+
+          [ "$fail" -eq 0 ] && echo "No prohibited file is tracked."
+          exit "$fail"
+
+      - name: Scan for committed secret patterns
+        run: |
+          set -euo pipefail
+          # Reports FILE and LINE NUMBER only. Matched values are never printed.
+          fail=0
+          patterns=(
+            'AccountKey[[:space:]]*='
+            'SharedAccessSignature'
+            'sig=[A-Za-z0-9%]{20,}'
+            'DefaultEndpointsProtocol=.*AccountKey'
+            'Endpoint=sb://.*SharedAccessKey'
+            'InstrumentationKey=[0-9a-fA-F-]{36}'
+            '-----BEGIN [A-Z ]*PRIVATE KEY-----'
+            'client_secret'
+            'clientSecret[[:space:]]*[:=]'
+            'ghp_[A-Za-z0-9]{30,}'
+            'github_pat_[A-Za-z0-9_]{30,}'
+            'xox[baprs]-[A-Za-z0-9-]{10,}'
+            'password[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"']{6,}'
+            'Server=tcp:.*Password='
+          )
+          for p in "${patterns[@]}"; do
+            hits="$(grep -rInE --binary-files=without-match \
+                      --exclude-dir=.git \
+                      --exclude=SECURITY.md \
+                      --exclude=CONTRIBUTING.md \
+                      --exclude=pr-validation.yml \
+                      -e "$p" . | cut -d: -f1,2 || true)"
+            if [ -n "$hits" ]; then
+              echo "::error::Possible committed secret matching a prohibited pattern. Review these locations (values intentionally not printed):"
+              echo "$hits"
+              fail=1
+            fi
+          done
+
+          # local.settings.example.json must contain placeholders only.
+          if grep -Eq 'AccountKey=[A-Za-z0-9+/=]{20,}|InstrumentationKey=[0-9a-fA-F-]{36}' \
+               src/logic-app/shopify-order-simulation/local.settings.example.json; then
+            echo "::error::local.settings.example.json appears to contain a real value"
+            fail=1
+          fi
+
+          [ "$fail" -eq 0 ] && echo "No obvious committed secret pattern found."
+          exit "$fail"
+
+      - name: Confirm no active Azure deployment path
+        run: |
+          set -euo pipefail
+          fail=0
+          for f in .github/workflows/deploy-uat.yml .github/workflows/promote-prod.yml .github/workflows/release.yml; do
+            if grep -Eq 'azure/login|az login|azure/webapps-deploy|azure/arm-deploy|az deployment|az logicapp|az functionapp' "$f"; then
+              echo "::error file=$f::A placeholder workflow contains an Azure login or deployment step. MODULE 4 is not authorised yet."
+              fail=1
+            fi
+            if ! grep -q 'MODULE 4' "$f"; then
+              echo "::error file=$f::Placeholder workflow must state that MODULE 4 configuration is required."
+              fail=1
+            fi
+          done
+          [ "$fail" -eq 0 ] && echo "No active Azure deployment path exists."
+          exit "$fail"
+
+      - name: Validation summary
+        if: always()
+        run: |
+          {
+            echo "### pr-validation"
+            echo ""
+            echo "| Check | Meaning |"
+            echo "| --- | --- |"
+            echo "| Required tree | Folder and file structure matches the MODULE 2 blueprint |"
+            echo "| JSON | Every tracked .json file parses |"
+            echo "| YAML | Every tracked .yml/.yaml file parses |"
+            echo "| Logic App boundary | wf-* folders contain workflow.json and call nothing external |"
+            echo "| Bicep | main.bicep, modules and parameter files build and lint |"
+            echo "| Prohibited files | local.settings.json, keys, certificates and archives are untracked |"
+            echo "| Secret patterns | No obvious committed-secret pattern (values never printed) |"
+            echo "| Deployment safety | No workflow can log in to or deploy to Azure |"
+          } >> "$GITHUB_STEP_SUMMARY"

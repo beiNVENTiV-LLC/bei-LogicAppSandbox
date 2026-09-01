@@ -1,0 +1,73 @@
+# ---------------------------------------------------------------------------
+# beiNVENTiV bei-LogicAppSandbox
+# Nothing in this file may be relaxed without a security review.
+# ---------------------------------------------------------------------------
+
+# Azure Logic App Standard / Functions local settings (MAY CONTAIN SECRETS)
+**/local.settings.json
+**/workflow-designtime/local.settings.json
+**/workflow-designtime/
+**/host.snapshot.*.json
+
+# Build output
+**/.bin/
+**/bin/
+**/obj/
+artifacts/
+dist/
+*.zip
+
+# Environment files
+.env
+.env.*
+
+# Certificates, keys, publish profiles
+*.pfx
+*.pem
+*.key
+*.p12
+*.cer
+*.publishsettings
+*.PublishSettings
+*.azurePubxml
+
+# Azure Functions Core Tools / Azurite
+.azure/
+__azurite_db*__.json
+__blobstorage__/
+__queuestorage__/
+
+# Bicep / ARM compiled output
+infra/**/*.json.bicepbuild
+main.json
+
+# Operating-system temporary files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Local IDE settings that must not be shared
+.vs/
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Logs and local scratch
+*.log
+local/
+scratch/
+
+# ---------------------------------------------------------------------------
+# Explicitly TRACKED (never ignore these):
+#   workflow.json, connections.json, host.json, parameters.json,
+#   local.settings.example.json, infra/**/*.bicep, infra/**/*.bicepparam
+# ---------------------------------------------------------------------------

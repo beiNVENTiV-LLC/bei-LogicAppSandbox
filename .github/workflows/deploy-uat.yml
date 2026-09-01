@@ -1,0 +1,69 @@
+# ---------------------------------------------------------------------------
+# bei-LogicAppSandbox - deploy to UAT
+#
+# STATUS: PLACEHOLDER. MODULE 4 IS NOT IMPLEMENTED.
+#
+# This workflow deliberately fails if it is invoked. It exists so that the
+# deployment surface is visible and reviewable, not so that it can run.
+#
+# It contains, by design:
+#   - no Azure login and no OIDC token request
+#   - no deployment step
+#   - no artifact upload, download or publication
+#   - no Azure credential, subscription id, tenant id, client id, resource
+#     group name or resource name
+#
+# It is manual-only (workflow_dispatch); no push, pull_request, schedule or
+# release event can start it.
+#
+# Implementing this workflow is MODULE 4 work and is currently
+# BLOCKED - AZURE IDENTITY REQUIRED. See:
+#   docs/decisions/0001-oidc-deployment-identity-blocked.md
+# ---------------------------------------------------------------------------
+name: deploy-uat
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  not-implemented:
+    name: not-implemented
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Explain why this workflow cannot run
+        run: |
+          {
+            echo "### deploy-uat - NOT IMPLEMENTED"
+            echo ""
+            echo "MODULE 4 configuration is required before this workflow can run."
+            echo ""
+            echo "**Intended future purpose**"
+            echo ""
+            echo "- Build the immutable Logic App artifact bei-logicappsandbox_&lt;version&gt;_&lt;short-sha&gt;.zip from the contents of src/logic-app/shopify-order-simulation/ at the ZIP root"
+            echo "- Authenticate to Azure with OIDC / workload identity federation using the UAT deployment identity"
+            echo "- Deploy infra/main.bicep with infra/environments/main.uat.bicepparam"
+            echo "- Deploy the artifact to the UAT Logic App Standard resource"
+            echo "- Run the UAT smoke test"
+            echo "- Record the deployment against the UAT GitHub Environment"
+            echo ""
+            echo "**Blocked on**"
+            echo ""
+            echo "- A UAT Azure deployment identity and federated credential scoped to this repository and the UAT environment"
+            echo "- AZURE_CLIENT_ID, AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID on the UAT GitHub Environment"
+            echo "- MODULE 3 Bicep templates that actually declare resources"
+            echo ""
+            echo "See docs/decisions/0001-oidc-deployment-identity-blocked.md."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail deliberately
+        run: |
+          echo "::error::deploy-uat is a MODULE 2 placeholder. MODULE 4 configuration is required before this workflow can run. Nothing was deployed."
+          exit 1
