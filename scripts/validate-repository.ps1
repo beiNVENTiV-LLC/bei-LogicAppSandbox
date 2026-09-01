@@ -94,15 +94,24 @@ try {
         Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' }
     $python = Get-Command python3 -ErrorAction SilentlyContinue
     if (-not $python) { $python = Get-Command python -ErrorAction SilentlyContinue }
+    $hasPyYaml = $false
     if ($python) {
+        & $python.Source -c "import yaml" 2>$null
+        $hasPyYaml = ($LASTEXITCODE -eq 0)
+    }
+    if ($python -and $hasPyYaml) {
         $yamlBad = 0
         foreach ($file in $yamlFiles) {
             & $python.Source -c "import yaml,sys; list(yaml.safe_load_all(open(sys.argv[1], encoding='utf-8')))" $file.FullName 2>$null
-            if ($LASTEXITCODE -ne 0) { Add-Failure "Invalid YAML (or PyYAML unavailable): $($file.FullName)"; $yamlBad++ }
+            if ($LASTEXITCODE -ne 0) { Add-Failure "Invalid YAML: $($file.FullName)"; $yamlBad++ }
         }
         if ($yamlBad -eq 0) { Write-Pass "$($yamlFiles.Count) YAML file(s) parsed" }
     }
-    else { Write-Host '  SKIP  No Python available for YAML validation; CI will still validate.' -ForegroundColor Yellow }
+    else {
+        # No local YAML parser. This is a tooling gap, not a repository fault -
+        # pr-validation validates every YAML file on each pull request.
+        Write-Host "  SKIP  No local YAML parser (PyYAML not installed); CI validates YAML on every PR." -ForegroundColor Yellow
+    }
 
     # ------------------------------------------------- 5. Logic App boundary
     Write-Section 'Logic App Standard project boundary'
@@ -117,10 +126,12 @@ try {
             Add-Failure "Workflow folder $($wf.Name) contains an environment name; the same artifact is promoted between environments"
         }
     }
-    $external = Select-String -Path (Join-Path $laRoot '*') -Recurse `
-        -Pattern 'shopify\.com', 'blob\.core\.windows\.net', 'vault\.azure\.net', 'office365' -ErrorAction SilentlyContinue
-    if ($external) { Add-Failure 'Placeholder workflow references an external endpoint; it must call nothing' }
-    if ($script:Failures.Count -eq 0 -or -not $external) { Write-Pass 'Project boundary is valid' }
+    $external = Get-ChildItem -LiteralPath $laRoot -Recurse -File -ErrorAction SilentlyContinue |
+        Select-String -Pattern 'shopify\.com', 'blob\.core\.windows\.net', 'vault\.azure\.net', 'office365' -ErrorAction SilentlyContinue
+    if ($external) {
+        foreach ($hit in $external) { Add-Failure "Placeholder workflow references an external endpoint at $($hit.Path):$($hit.LineNumber); it must call nothing" }
+    }
+    else { Write-Pass 'Project boundary is valid' }
 
     # -------------------------------------------------- 6. prohibited files
     Write-Section 'Prohibited files'
