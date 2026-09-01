@@ -2,7 +2,7 @@
 # bei-LogicAppSandbox code owners
 #
 # ACTION REQUIRED BEFORE THIS FILE WORKS
-# Replace every occurrence of @ORG-SLUG-PLACEHOLDER/azure-integration-maintainers
+# Replace every occurrence of @beiNVENTiV-LLC/azure-integration-maintainers
 # with the ACTUAL visible GitHub team slug, in the form @<org-slug>/<team-slug>.
 # The organization slug and the team slug have NOT been confirmed and must not
 # be guessed. The team must also be granted write access to this repository, or
@@ -18,20 +18,20 @@
 # ---------------------------------------------------------------------------
 
 # Catch-all: every file in the repository
-*                       @ORG-SLUG-PLACEHOLDER/azure-integration-maintainers
+*                       @beiNVENTiV-LLC/azure-integration-maintainers
 
 # Operational controls
-/ops/                   @ORG-SLUG-PLACEHOLDER/azure-integration-maintainers
+/ops/                   @beiNVENTiV-LLC/azure-integration-maintainers
 
 # Logic App source
-/src/logic-app/         @ORG-SLUG-PLACEHOLDER/azure-integration-maintainers
+/src/logic-app/         @beiNVENTiV-LLC/azure-integration-maintainers
 
 # Infrastructure as code
-/infra/                 @ORG-SLUG-PLACEHOLDER/azure-integration-maintainers
+/infra/                 @beiNVENTiV-LLC/azure-integration-maintainers
 
 # Repository configuration and automation
-/.github/               @ORG-SLUG-PLACEHOLDER/azure-integration-maintainers
-/.github/workflows/     @ORG-SLUG-PLACEHOLDER/azure-integration-maintainers
+/.github/               @beiNVENTiV-LLC/azure-integration-maintainers
+/.github/workflows/     @beiNVENTiV-LLC/azure-integration-maintainers
 
 # Code ownership itself - listed last so it cannot be overridden by an earlier rule
-/.github/CODEOWNERS     @ORG-SLUG-PLACEHOLDER/azure-integration-maintainers
+/.github/CODEOWNERS     @beiNVENTiV-LLC/azure-integration-maintainers
