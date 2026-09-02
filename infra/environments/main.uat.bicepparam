@@ -16,14 +16,14 @@
 
 using '../main.bicep'
 
-param workload = 'shopifylab'
+param workload = 'shopify'
 param environmentName = 'uat'
-param location = 'eastus2'
-param locationShortCode = 'eus2'
+param location = 'westcentralus'
+param locationShortCode = 'wcus'
 param instance = '001'
 param tags = {
   environment: 'UAT'
-  workload: 'shopifylab'
+  workload: 'shopify'
   owner: 'beiNVENTiV LLC'
   repository: 'bei-LogicAppSandbox'
   managedBy: 'bicep'

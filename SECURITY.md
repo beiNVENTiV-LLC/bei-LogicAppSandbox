@@ -80,7 +80,7 @@ Do **not** open a public issue, and do **not** include the secret value in your 
 1. Stop what you are doing. Do not push further commits to the affected branch.
 2. Notify the beiNVENTiV security contact and the `azure-integration-maintainers` team
    immediately through a private channel (email or a private Teams message).
-   *Security contact: `[PLACEHOLDER — beiNVENTiV security contact address required]`.*
+   *Security contact: `erika@beinventiv.com and John@beinventiv.com`.*
 3. Report: what type of credential, which environment it grants access to, where it was exposed
    (branch, commit, pull request, log, screenshot), when it was first exposed, and whether the
    repository or log is public. **Never the value itself.**
