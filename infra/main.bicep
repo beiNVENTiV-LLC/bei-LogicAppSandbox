@@ -1,47 +1,46 @@
 // ---------------------------------------------------------------------------
 // bei-LogicAppSandbox - infrastructure entry point
 //
-// STATUS: MODULE 3 PLACEHOLDER. THIS TEMPLATE DEPLOYS NOTHING.
+// MODULE 3. This template declares the real workload infrastructure.
 //
-// Future responsibility of this file:
-//   - Own the subscription-scoped deployment for one environment (UAT or PROD).
-//   - Create the resource group, then orchestrate the modules in ./modules:
-//       resource-group, storage-account, application-insights, key-vault,
-//       workflow-plan, logic-app-standard, role-assignments, diagnostics.
-//   - Derive every resource name from the beiNVENTiV naming standard using the
-//     parameters below, so that UAT and PROD differ ONLY by parameter file.
-//   - Enable a system-assigned Managed Identity on the Logic App Standard
-//     resource and grant it least-privilege access to Key Vault, Storage and
-//     Application Insights via ./modules/role-assignments.bicep.
+// SCOPE: resourceGroup.
+// The resource group itself is NOT created here. It is created once, out of
+// band, because the GitHub deployment identity holds Contributor and User
+// Access Administrator at RESOURCE GROUP scope only and has no permission at
+// subscription scope. That is deliberate least privilege - see ADR 0001.
 //
-// There is ONE template for BOTH environments. Never duplicate this file per
+//   UAT  : rg-bei-<workload>-uat-<region>-<instance>
+//   PROD : rg-bei-<workload>-prod-<region>-<instance>
+//
+// ONE template serves BOTH environments. Never duplicate this file per
 // environment. Environment difference is expressed only through:
 //   infra/environments/main.uat.bicepparam
 //   infra/environments/main.prod.bicepparam
 //
-// Secrets never appear here or in a .bicepparam file. Parameter file values are
-// stored as plain text; sensitive values must come from Azure Key Vault or
-// another approved secure source.
+// No secret value appears in this template or in a parameter file. The storage
+// connection string is resolved at deployment time with listKeys() and is never
+// written to source control. Application secrets belong in Key Vault and are
+// read at runtime by the Logic App managed identity.
 // ---------------------------------------------------------------------------
 
-targetScope = 'subscription'
+targetScope = 'resourceGroup'
 
-@description('Short workload identifier used in every resource name, for example shopifylab.')
+@description('Short workload identifier used in every resource name, for example shopify.')
 @minLength(3)
 @maxLength(12)
 param workload string
 
-@description('Target environment. Drives naming and, in MODULE 3, environment-specific sizing.')
+@description('Target environment. Drives naming and environment-specific sizing.')
 @allowed([
   'uat'
   'prod'
 ])
 param environmentName string
 
-@description('Azure region for all resources, for example eastus2.')
-param location string
+@description('Azure region for all resources. Defaults to the resource group location.')
+param location string = resourceGroup().location
 
-@description('Short region code used in resource names, for example eus2.')
+@description('Short region code used in resource names, for example wcus.')
 @minLength(3)
 @maxLength(5)
 param locationShortCode string
@@ -51,51 +50,151 @@ param locationShortCode string
 @maxLength(3)
 param instance string = '001'
 
-@description('Tags applied to every resource created by MODULE 3.')
+@description('Tags applied to every resource created by this template.')
 param tags object = {}
 
-// Naming standard: rg-bei-<workload>-<env>-<region>-<instance> and siblings.
+@description('Workflow Standard plan SKU. WS1 is the smallest tier.')
+@allowed([
+  'WS1'
+  'WS2'
+  'WS3'
+])
+param workflowPlanSku string = 'WS1'
+
+@description('Storage account redundancy. PROD should use a geo-redundant tier.')
+@allowed([
+  'Standard_LRS'
+  'Standard_ZRS'
+  'Standard_GRS'
+])
+param storageSkuName string = 'Standard_LRS'
+
+@description('Log Analytics and Application Insights retention, in days.')
+@minValue(30)
+@maxValue(730)
+param logRetentionInDays int = 30
+
+@description('Enable Key Vault purge protection. Required for PROD; irreversible once enabled.')
+param enablePurgeProtection bool = false
+
+// ---------------------------------------------------------------------------
+// Naming - derived once, never typed twice.
+// See docs/architecture/naming-standards.md.
+// ---------------------------------------------------------------------------
+
 var namePrefix = 'bei-${workload}-${environmentName}-${locationShortCode}-${instance}'
 
+// Globally unique suffix derived from the resource group, so it is stable across
+// redeployments of the same environment and different between environments.
+var uniqueSuffix = take(uniqueString(resourceGroup().id), 6)
+
 var resourceNames = {
-  resourceGroup: 'rg-${namePrefix}'
   logicApp: 'logic-${namePrefix}'
   workflowPlan: 'asp-${namePrefix}'
   applicationInsights: 'appi-${namePrefix}'
   logAnalytics: 'log-${namePrefix}'
-  // Storage account names are lowercase alphanumeric only and capped at 24 characters.
+  // Storage account names allow lowercase letters and digits only, max 24 chars.
   storageAccount: take(toLower(replace('stbei${workload}${environmentName}${locationShortCode}${instance}', '-', '')), 24)
-  // The Key Vault unique suffix is supplied in MODULE 3; it is not guessed here.
-  keyVaultPrefix: 'kv-beishop-${environmentName}-'
+  // Key Vault names are globally unique and capped at 24 characters.
+  keyVault: take('kv-beishop-${environmentName}-${uniqueSuffix}', 24)
 }
 
 // ---------------------------------------------------------------------------
-// MODULE 3 will add the resource group and the module orchestration here.
-// Intentionally commented out so that this template deploys nothing today.
-//
-// resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
-//   name: resourceNames.resourceGroup
-//   location: location
-//   tags: tags
-// }
-//
-// module storage './modules/storage-account.bicep' = { ... }
-// module insights './modules/application-insights.bicep' = { ... }
-// module vault './modules/key-vault.bicep' = { ... }
-// module plan './modules/workflow-plan.bicep' = { ... }
-// module logicApp './modules/logic-app-standard.bicep' = { ... }
-// module roles './modules/role-assignments.bicep' = { ... }
-// module diagnostics './modules/diagnostics.bicep' = { ... }
+// Modules
 // ---------------------------------------------------------------------------
 
-@description('Resource names this template will create in MODULE 3. Nothing is deployed today.')
-output plannedResourceNames object = resourceNames
+module storage './modules/storage-account.bicep' = {
+  name: 'storage-account'
+  params: {
+    name: resourceNames.storageAccount
+    location: location
+    tags: tags
+    skuName: storageSkuName
+  }
+}
 
-@description('Environment this parameter set targets.')
+module monitoring './modules/application-insights.bicep' = {
+  name: 'application-insights'
+  params: {
+    applicationInsightsName: resourceNames.applicationInsights
+    logAnalyticsName: resourceNames.logAnalytics
+    location: location
+    tags: tags
+    retentionInDays: logRetentionInDays
+  }
+}
+
+module vault './modules/key-vault.bicep' = {
+  name: 'key-vault'
+  params: {
+    name: resourceNames.keyVault
+    location: location
+    tags: tags
+    enablePurgeProtection: enablePurgeProtection
+  }
+}
+
+module plan './modules/workflow-plan.bicep' = {
+  name: 'workflow-plan'
+  params: {
+    name: resourceNames.workflowPlan
+    location: location
+    tags: tags
+    skuName: workflowPlanSku
+  }
+}
+
+module logicApp './modules/logic-app-standard.bicep' = {
+  name: 'logic-app-standard'
+  params: {
+    name: resourceNames.logicApp
+    location: location
+    tags: tags
+    workflowPlanId: plan.outputs.id
+    storageAccountName: storage.outputs.name
+    applicationInsightsName: monitoring.outputs.applicationInsightsName
+    keyVaultName: vault.outputs.name
+  }
+}
+
+module roles './modules/role-assignments.bicep' = {
+  name: 'role-assignments'
+  params: {
+    keyVaultName: vault.outputs.name
+    principalId: logicApp.outputs.principalId
+  }
+}
+
+module diagnostics './modules/diagnostics.bicep' = {
+  name: 'diagnostics'
+  params: {
+    logicAppName: logicApp.outputs.name
+    keyVaultName: vault.outputs.name
+    logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsId
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Outputs - names and ids only. Never a secret (enforced by bicepconfig.json).
+// ---------------------------------------------------------------------------
+
+@description('Name of the deployed Logic App Standard resource.')
+output logicAppName string = logicApp.outputs.name
+
+@description('Default hostname of the deployed Logic App Standard resource.')
+output logicAppHostName string = logicApp.outputs.defaultHostName
+
+@description('Managed identity principal id of the Logic App.')
+output logicAppPrincipalId string = logicApp.outputs.principalId
+
+@description('Name of the Key Vault holding this workload of secrets.')
+output keyVaultName string = vault.outputs.name
+
+@description('Name of the storage account used by the Logic App runtime.')
+output storageAccountName string = storage.outputs.name
+
+@description('Name of the Application Insights resource.')
+output applicationInsightsName string = monitoring.outputs.applicationInsightsName
+
+@description('Environment this deployment targets.')
 output targetEnvironment string = environmentName
-
-@description('Region this parameter set targets.')
-output targetLocation string = location
-
-@description('Tags that will be applied in MODULE 3.')
-output plannedTags object = tags

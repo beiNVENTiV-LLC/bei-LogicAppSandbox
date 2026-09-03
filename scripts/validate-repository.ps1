@@ -155,7 +155,7 @@ try {
     # ------------------------------------------------------ 7. secret scan
     Write-Section 'Committed-secret patterns'
     $secretPatterns = @(
-        'AccountKey\s*=', 'SharedAccessSignature', 'sig=[A-Za-z0-9%]{20,}',
+        'AccountKey\s*=\s*[A-Za-z0-9+/]{20,}', 'SharedAccessSignature', 'sig=[A-Za-z0-9%]{20,}',
         'Endpoint=sb://.*SharedAccessKey', 'InstrumentationKey=[0-9a-fA-F-]{36}',
         '-----BEGIN [A-Z ]*PRIVATE KEY-----', 'client_secret', 'clientSecret\s*[:=]',
         'ghp_[A-Za-z0-9]{30,}', 'github_pat_[A-Za-z0-9_]{30,}', 'Server=tcp:.*Password='

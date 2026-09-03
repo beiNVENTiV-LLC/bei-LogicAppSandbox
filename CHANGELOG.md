@@ -9,6 +9,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- MODULE 3 infrastructure. `infra/main.bicep` is now resource-group scoped and
+  declares the workload: storage account, Log Analytics workspace, workspace-based
+  Application Insights, RBAC-enabled Key Vault, Workflow Standard plan, Logic App
+  Standard with a system-assigned managed identity, a least-privilege Key Vault
+  Secrets User role assignment, and diagnostic settings routed to Log Analytics.
+- Environment sizing expressed only through the `.bicepparam` files: UAT uses
+  locally redundant storage with 30-day retention; PROD uses geo-redundant storage
+  with 90-day retention and Key Vault purge protection.
+
+
 ### Changed
 
 ### Deprecated

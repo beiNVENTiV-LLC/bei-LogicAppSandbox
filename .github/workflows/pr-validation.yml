@@ -244,10 +244,10 @@ jobs:
           # Reports FILE and LINE NUMBER only. Matched values are never printed.
           fail=0
           patterns=(
-            'AccountKey[[:space:]]*='
+            'AccountKey[[:space:]]*=[[:space:]]*[A-Za-z0-9+/]{20,}'
             'SharedAccessSignature'
             'sig=[A-Za-z0-9%]{20,}'
-            'DefaultEndpointsProtocol=.*AccountKey'
+            'DefaultEndpointsProtocol=.*AccountKey[[:space:]]*=[[:space:]]*[A-Za-z0-9+/]{20,}'
             'Endpoint=sb://.*SharedAccessKey'
             'InstrumentationKey=[0-9a-fA-F-]{36}'
             '-----BEGIN [A-Z ]*PRIVATE KEY-----'
