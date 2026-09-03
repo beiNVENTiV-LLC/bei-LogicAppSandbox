@@ -1,17 +1,18 @@
 // ---------------------------------------------------------------------------
 // bei-LogicAppSandbox - PROD parameters
 //
-// STATUS: MODULE 3 PLACEHOLDER. main.bicep deploys nothing today.
-//
 // NONSECRET VALUES ONLY. Bicep parameter file values are stored and transmitted
 // as PLAIN TEXT. Any sensitive value must come from Azure Key Vault or another
 // approved secure source - never from this file.
 //
-// This is the ONLY place PROD differs from the other environment. Do not
-// create a second copy of main.bicep for this environment.
+// This is the ONLY place PROD differs from UAT. Do not create a second copy of
+// main.bicep for this environment.
 //
-// Values marked PLACEHOLDER have NOT been confirmed with beiNVENTiV and must be
-// replaced in MODULE 3. Region and cost centre are unconfirmed assumptions.
+// PROD is durable: geo-redundant storage, longer retention, and purge
+// protection enabled so a deleted Key Vault cannot be purged before its
+// soft-delete window expires.
+//
+// WARNING: enablePurgeProtection is IRREVERSIBLE once a deployment applies it.
 // ---------------------------------------------------------------------------
 
 using '../main.bicep'
@@ -21,6 +22,12 @@ param environmentName = 'prod'
 param location = 'westcentralus'
 param locationShortCode = 'wcus'
 param instance = '001'
+
+param workflowPlanSku = 'WS1'
+param storageSkuName = 'Standard_GRS'
+param logRetentionInDays = 90
+param enablePurgeProtection = true
+
 param tags = {
   environment: 'PROD'
   workload: 'shopify'
