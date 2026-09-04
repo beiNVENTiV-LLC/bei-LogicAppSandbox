@@ -9,6 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.2.0] - 2026-09-03
+
+### Added
+
 - MODULE 3 infrastructure. `infra/main.bicep` is now resource-group scoped and
   declares the workload: storage account, Log Analytics workspace, workspace-based
   Application Insights, RBAC-enabled Key Vault, Workflow Standard plan, Logic App
@@ -71,5 +85,5 @@ MODULE 2 — Repository Blueprint. This release establishes repository governanc
 - OIDC is documented as the only permitted GitHub-to-Azure authentication mechanism; no Azure
   client secret is created.
 
-[Unreleased]: https://github.com/[PLACEHOLDER-ORG-SLUG]/bei-LogicAppSandbox/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/beiNVENTiV-LLC/bei-LogicAppSandbox/compare/v0.2.0...HEAD
 [0.1.0]: https://github.com/[PLACEHOLDER-ORG-SLUG]/bei-LogicAppSandbox/releases/tag/v0.1.0
