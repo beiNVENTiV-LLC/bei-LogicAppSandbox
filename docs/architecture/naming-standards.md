@@ -69,5 +69,5 @@ never moved and never reused.
 | Item | Status |
 | --- | --- |
 | Confirmed `<workload>` value | **CONFIRMED: `shopify` |
-| Confirmed Azure region and region code | **CONFIRMED: `westcentralus` / `wcus` |
+| Confirmed Azure region and region code | **CONFIRMED: `southcentralus` / `scus` |
 | Cost centre tag value | **PLACEHOLDER — beiNVENTiV confirmation required** |

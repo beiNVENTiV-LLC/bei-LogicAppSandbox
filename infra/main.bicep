@@ -94,9 +94,11 @@ var resourceNames = {
   applicationInsights: 'appi-${namePrefix}'
   logAnalytics: 'log-${namePrefix}'
   // Storage account names allow lowercase letters and digits only, max 24 chars.
-  storageAccount: take(toLower(replace('stbei${workload}${environmentName}${locationShortCode}${instance}', '-', '')), 24)
+  // Literal 'stbei' prefix keeps the provable minimum length above 3 and caps the
+  // whole name at 24, the Azure limit for a storage account name.
+  storageAccount: 'stbei${take(toLower(replace('${workload}${environmentName}${locationShortCode}${instance}', '-', '')), 19)}'
   // Key Vault names are globally unique and capped at 24 characters.
-  keyVault: take('kv-beishop-${environmentName}-${uniqueSuffix}', 24)
+  keyVault: 'kv-beishop-${environmentName}-${uniqueSuffix}'
 }
 
 // ---------------------------------------------------------------------------
