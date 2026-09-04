@@ -16,8 +16,8 @@ using '../main.bicep'
 
 param workload = 'shopify'
 param environmentName = 'uat'
-param location = 'westcentralus'
-param locationShortCode = 'wcus'
+param location = 'southcentralus'
+param locationShortCode = 'scus'
 param instance = '001'
 
 param workflowPlanSku = 'WS1'

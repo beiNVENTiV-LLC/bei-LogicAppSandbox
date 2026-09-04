@@ -27,6 +27,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Moved the target region from West Central US to South Central US. West Central US
+  does not offer `Microsoft.Insights/components`, so the UAT deployment failed at
+  preflight with `LocationNotAvailableForResourceType`. No resource had been created.
+  Every resource type the template needs is now verified available before deployment.
+- Restructured the storage account and Key Vault name expressions so the Bicep linter
+  can prove a minimum length, clearing warning BCP334. Generated names are unchanged
+  in form and remain within the 24-character limit.
+
 ### Security
 
 ## [0.1.0] - 2026-08-31
